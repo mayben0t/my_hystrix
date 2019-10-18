@@ -17,7 +17,10 @@ package com.netflix.hystrix.examples.basic;
 
 import static org.junit.Assert.*;
 
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.junit.Test;
 
@@ -41,9 +44,32 @@ public class CommandHelloWorld extends HystrixCommand<String> {
     }
 
     @Override
-    protected String run() {
+    protected String run()throws Exception {
+        TimeUnit.SECONDS.sleep(5);
         return "Hello " + name + "!";
     }
+
+    @Override
+    protected String getFallback() {
+        return "我又不是熔断";
+    }
+
+    public static void main(String[] args) {
+        CommandHelloWorld world = new CommandHelloWorld("World");
+        CommandHelloWorld world1 = new CommandHelloWorld("World");
+        String single = world.observe().toBlocking().single();
+        String s= "";
+        try {
+             s = world1.queue().get(3, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        System.out.println("==============");
+        System.out.println(s);
+        System.out.println("==============");
+        System.out.println(single);
+    }
+
 
     public static class UnitTest {
 
